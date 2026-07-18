@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-07-18
+
+### Added
+- `tui.py` — interactive menu that launches when running `pc-analyser` with no arguments
+- Menu options: Snapshot, Live Monitor, Web Dashboard, Config editor, Exit
+- Config menu: set individual thresholds, toggle alerts on/off, reset to defaults
+- All menu actions return to the main menu after completing (except Exit)
+
+---
+
 ## [0.1.1] - 2026-07-18
 
 ### Fixed

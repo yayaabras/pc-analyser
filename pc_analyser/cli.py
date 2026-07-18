@@ -20,7 +20,8 @@ console = Console()
 def main(ctx):
     """PC Analyser — monitor every detail of your hardware."""
     if ctx.invoked_subcommand is None:
-        ctx.invoke(snapshot)
+        from .tui import run_interactive
+        run_interactive()
 
 
 @main.command()
