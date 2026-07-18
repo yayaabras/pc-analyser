@@ -10,7 +10,6 @@ _IS_WSL = None
 
 
 def is_wsl() -> bool:
-    """Detect if running inside WSL."""
     global _IS_WSL
     if _IS_WSL is not None:
         return _IS_WSL
@@ -19,54 +18,55 @@ def is_wsl() -> bool:
         return _IS_WSL
     try:
         with open("/proc/version") as f:
-            content = f.read().lower()
-            _IS_WSL = "microsoft" in content or "wsl" in content
+            _IS_WSL = "microsoft" in f.read().lower()
     except OSError:
         _IS_WSL = False
     return _IS_WSL
 
 
 def powershell(command: str, timeout: int = 8):
-    """
-    Run a PowerShell command via WSL bridge and return parsed JSON.
-    Returns None on failure.
-    """
-    if not is_wsl():
-        return None
-    if not os.path.exists(_POWERSHELL):
+    """Run PowerShell and return parsed JSON, or None on failure."""
+    if not is_wsl() or not os.path.exists(_POWERSHELL):
         return None
     try:
         result = subprocess.run(
             [_POWERSHELL, "-NoProfile", "-NonInteractive", "-Command", command],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
+            capture_output=True, text=True, timeout=timeout,
         )
         output = result.stdout.strip()
         if not output:
             return None
         return json.loads(output)
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception):
+    except Exception:
         return None
 
 
 def get_gpu_info() -> list[dict]:
-    """Get GPU info from Windows WMI via PowerShell."""
+    """Get GPU info + live load % from Windows WMI."""
     data = powershell(
         "Get-WmiObject Win32_VideoController | "
-        "Select-Object Name,AdapterRAM,DriverVersion,VideoProcessor | "
+        "Select-Object Name,AdapterRAM,DriverVersion,"
+        "CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate | "
         "ConvertTo-Json"
     )
     if data is None:
         return []
     if isinstance(data, dict):
         data = [data]
+
+    load_pct = _get_gpu_load()
+
     result = []
     for i, g in enumerate(data):
         vram_mb = None
         ram = g.get("AdapterRAM")
         if ram and int(ram) > 0:
             vram_mb = round(int(ram) / 1024 ** 2, 0)
+        res = g.get("CurrentHorizontalResolution")
+        resolution = (
+            f"{res}x{g.get('CurrentVerticalResolution')} @ {g.get('CurrentRefreshRate')}Hz"
+            if res else None
+        )
         result.append({
             "id": i,
             "name": g.get("Name") or "Unknown GPU",
@@ -74,16 +74,33 @@ def get_gpu_info() -> list[dict]:
             "vram_total_mb": vram_mb,
             "vram_used_mb": None,
             "vram_free_mb": None,
-            "load_percent": None,
+            "load_percent": load_pct,
             "temperature_c": None,
             "fan_speed_percent": None,
             "vendor": _guess_vendor(g.get("Name", "")),
+            "resolution": resolution,
         })
     return result
 
 
+def _get_gpu_load() -> float | None:
+    """Get GPU 3D engine utilisation % via WMI performance counters."""
+    data = powershell(
+        "Get-WmiObject -Namespace root/cimv2 "
+        "-Class Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine "
+        "-ErrorAction SilentlyContinue | "
+        "Where-Object { $_.Name -like '*engtype_3D*' } | "
+        "Measure-Object -Property UtilizationPercentage -Sum | "
+        "Select-Object Sum | ConvertTo-Json",
+        timeout=6,
+    )
+    if data and data.get("Sum") is not None:
+        return float(data["Sum"])
+    return None
+
+
 def get_ram_info() -> dict:
-    """Get RAM speed and slot info from Windows WMI via PowerShell."""
+    """Get RAM speed, type, and slot info from WMI."""
     data = powershell(
         "Get-WmiObject Win32_PhysicalMemory | "
         "Select-Object Speed,MemoryType,Capacity,Manufacturer,PartNumber,DeviceLocator | "
@@ -123,16 +140,14 @@ def get_ram_info() -> dict:
 
 
 def get_motherboard_info() -> dict:
-    """Get motherboard and BIOS info from Windows WMI via PowerShell."""
+    """Get motherboard and BIOS info from WMI."""
     board = powershell(
         "Get-WmiObject Win32_BaseBoard | "
-        "Select-Object Manufacturer,Product,Version,SerialNumber | "
-        "ConvertTo-Json"
+        "Select-Object Manufacturer,Product,Version,SerialNumber | ConvertTo-Json"
     )
     bios = powershell(
         "Get-WmiObject Win32_BIOS | "
-        "Select-Object Manufacturer,SMBIOSBIOSVersion,ReleaseDate | "
-        "ConvertTo-Json"
+        "Select-Object Manufacturer,SMBIOSBIOSVersion,ReleaseDate | ConvertTo-Json"
     )
     result = {}
     if board:
@@ -152,8 +167,80 @@ def get_motherboard_info() -> dict:
     return result
 
 
+def get_temperatures_and_fans() -> dict:
+    """
+    Get temperatures and fan RPMs from LibreHardwareMonitor WMI bridge.
+    LHM must be running with WMI enabled for this to work.
+    Returns lhm_available=False if not running.
+    """
+    result = {
+        "temperatures": {},
+        "fans": {},
+        "cpu_temp_c": None,
+        "lhm_available": False,
+    }
+
+    data = powershell(
+        "Get-WmiObject -Namespace root/LibreHardwareMonitor -Class Sensor "
+        "-ErrorAction SilentlyContinue | "
+        "Select-Object Name,Value,SensorType,Parent | ConvertTo-Json",
+        timeout=6,
+    )
+    if not data:
+        return result
+
+    if isinstance(data, dict):
+        data = [data]
+
+    result["lhm_available"] = True
+
+    for s in data:
+        name = s.get("Name") or "Unknown"
+        value = s.get("Value")
+        sensor_type = s.get("SensorType") or ""
+        parent = s.get("Parent") or "LHM"
+
+        if value is None:
+            continue
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            continue
+
+        if sensor_type == "Temperature":
+            if parent not in result["temperatures"]:
+                result["temperatures"][parent] = []
+            result["temperatures"][parent].append({
+                "label": name,
+                "current_c": round(value, 1),
+                "high_c": None,
+                "critical_c": None,
+            })
+            if "cpu" in name.lower() and result["cpu_temp_c"] is None:
+                result["cpu_temp_c"] = round(value, 1)
+
+        elif sensor_type == "Fan":
+            if parent not in result["fans"]:
+                result["fans"][parent] = []
+            result["fans"][parent].append({
+                "label": name,
+                "rpm": int(value),
+            })
+
+    # Derive cpu_temp_c from parent averages if not found by name
+    if result["cpu_temp_c"] is None:
+        for parent, entries in result["temperatures"].items():
+            if any(k in parent.lower() for k in ("cpu", "ryzen", "core", "amd")):
+                vals = [e["current_c"] for e in entries if e["current_c"] is not None]
+                if vals:
+                    result["cpu_temp_c"] = round(sum(vals) / len(vals), 1)
+                    break
+
+    return result
+
+
 def get_cpu_cache() -> dict:
-    """Get accurate CPU cache sizes via lscpu (works in WSL)."""
+    """Get accurate CPU cache sizes via lscpu."""
     try:
         out = subprocess.check_output(["lscpu"], text=True, timeout=5)
         result = {}
@@ -169,11 +256,10 @@ def get_cpu_cache() -> dict:
 
 
 def _parse_lscpu_cache(line: str) -> int:
-    """Parse '4 MiB (8 instances)' -> KB."""
     try:
-        val = line.split(":")[1].strip().split()[0]
-        unit = line.split(":")[1].strip().split()[1].upper()
-        num = float(val)
+        parts = line.split(":")[1].strip().split()
+        num = float(parts[0])
+        unit = parts[1].upper() if len(parts) > 1 else "KB"
         if "MIB" in unit or "MB" in unit:
             return int(num * 1024)
         if "GIB" in unit or "GB" in unit:
@@ -184,11 +270,11 @@ def _parse_lscpu_cache(line: str) -> int:
 
 
 def _guess_vendor(name: str) -> str:
-    name_lower = name.lower()
-    if "amd" in name_lower or "radeon" in name_lower:
+    n = name.lower()
+    if "amd" in n or "radeon" in n:
         return "AMD"
-    if "nvidia" in name_lower or "geforce" in name_lower or "quadro" in name_lower:
+    if "nvidia" in n or "geforce" in n or "quadro" in n:
         return "NVIDIA"
-    if "intel" in name_lower:
+    if "intel" in n:
         return "Intel"
     return "Unknown"
