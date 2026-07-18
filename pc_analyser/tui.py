@@ -133,11 +133,17 @@ def run_interactive():
             interval = cfg.get("refresh_interval_seconds", 2)
             console.print(f"[dim]Live monitor — refresh every {interval}s. Ctrl+C to stop.[/dim]")
             try:
-                with Live(console=console, refresh_per_second=1, screen=True) as live_display:
+                with Live(
+                    console=console,
+                    refresh_per_second=2,
+                    screen=False,
+                    vertical_overflow="visible",
+                    auto_refresh=False,
+                ) as live_display:
                     while True:
                         data = collect_all()
                         alerts = evaluate_alerts(data)
-                        live_display.update(render_live_frame(data, alerts))
+                        live_display.update(render_live_frame(data, alerts), refresh=True)
                         time.sleep(interval)
             except KeyboardInterrupt:
                 pass

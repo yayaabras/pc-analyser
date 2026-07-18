@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Live monitor mode now uses `screen=False` + `vertical_overflow="visible"` so the terminal remains scrollable — previously `screen=True` locked the terminal and disabled scrolling
+
 ---
 
 ## [0.1.2] - 2026-07-18
