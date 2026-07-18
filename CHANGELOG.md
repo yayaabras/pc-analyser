@@ -10,7 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `build_windows.py` — builds a native Windows `.exe` using PyInstaller via PowerShell and creates a Desktop shortcut automatically
+- **CPU**: per-core frequency, load average (1/5/15 min), context switches total, interrupts total, iowait %
+- **GPU**: AMD sysfs collector reading `gpu_busy_percent`, VRAM, `pp_dpm_sclk/mclk` clocks, hwmon temps (junction + die), power draw (W), fan RPM — works on Linux with `amdgpu` driver
+- **GPU**: NVIDIA nvidia-smi now also queries core/memory clocks and power draw (W)
+- **Memory**: page faults total from `/proc/vmstat`, top-5 processes by RSS
+- **Disk**: live IOPS (read/write ops/sec) and throughput (MB/s) via 0.5s delta; full SMART attributes: power-on hours, reallocated sectors, wear level
+- **Network**: errors in/out, drops in/out, packet counts, default gateway detection, ping latency to gateway
+- **Processes** (`collectors/processes.py`): top-N by CPU %, RAM (RSS), and disk I/O — new collector
+- **System** (`collectors/system.py`): uptime, boot time, OS version, WSL detection, thermal throttle events — new collector
+- **SQLite time-series** (`storage.py`): rolling 24h history at 2s intervals, `store_snapshot()`, `query_history()`, `prune_old()`, `get_stats_summary()`; web server stores every broadcast to DB
+- **Web API**: `/api/history` and `/api/history/<hours>` endpoints, `/api/stats` summary endpoint
 
 ---
 

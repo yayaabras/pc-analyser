@@ -8,22 +8,20 @@ from .storage import collect_storage
 from .network import collect_network
 from .battery import collect_battery
 from .motherboard import collect_motherboard
+from .processes import collect_processes
+from .system import collect_system
 
 __all__ = [
-    "collect_cpu",
-    "collect_memory",
-    "collect_gpu",
-    "collect_thermal",
-    "collect_storage",
-    "collect_network",
-    "collect_battery",
-    "collect_motherboard",
+    "collect_cpu", "collect_memory", "collect_gpu", "collect_thermal",
+    "collect_storage", "collect_network", "collect_battery",
+    "collect_motherboard", "collect_processes", "collect_system",
+    "collect_all",
 ]
 
 
-def collect_all() -> dict:
+def collect_all(include_processes: bool = True) -> dict:
     """Collect all hardware metrics in one call."""
-    return {
+    data = {
         "cpu": collect_cpu(),
         "memory": collect_memory(),
         "gpu": collect_gpu(),
@@ -32,4 +30,8 @@ def collect_all() -> dict:
         "network": collect_network(),
         "battery": collect_battery(),
         "motherboard": collect_motherboard(),
+        "system": collect_system(),
     }
+    if include_processes:
+        data["processes"] = collect_processes()
+    return data
