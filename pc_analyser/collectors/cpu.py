@@ -54,6 +54,14 @@ def collect_cpu() -> dict:
         # Fallback: read from /proc/cpuinfo on Linux
         result["model"] = _read_proc_cpu_model()
 
+    # Override cache with lscpu (more accurate, especially in WSL)
+    from ..wsl_bridge import get_cpu_cache
+    lscpu_cache = get_cpu_cache()
+    if lscpu_cache.get("cache_l2_kb"):
+        result["cache_l2_kb"] = lscpu_cache["cache_l2_kb"]
+    if lscpu_cache.get("cache_l3_kb"):
+        result["cache_l3_kb"] = lscpu_cache["cache_l3_kb"]
+
     return result
 
 

@@ -9,8 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `wsl_bridge.py` — PowerShell bridge that queries Windows WMI from inside WSL, enabling full hardware data when running on WSL
+
 ### Fixed
-- Live monitor mode now uses `screen=False` + `vertical_overflow="visible"` so the terminal remains scrollable — previously `screen=True` locked the terminal and disabled scrolling
+- GPU now detected in WSL via PowerShell WMI (`AMD Radeon RX 5600 XT` visible)
+- RAM speed (3600 MHz), type (DDR4), and stick count now populated in WSL
+- Motherboard and BIOS info now populated in WSL (`MSI B450 TOMAHAWK MAX`)
+- CPU L2/L3 cache now uses `lscpu` for accurate values (96 MB L3 instead of wrong 512 KB)
 
 ---
 

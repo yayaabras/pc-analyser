@@ -27,6 +27,10 @@ def collect_memory() -> dict:
 
     if platform.system() == "Windows":
         result.update(_collect_windows_ram_details())
+    elif platform.system() == "Linux":
+        from ..wsl_bridge import is_wsl, get_ram_info
+        if is_wsl():
+            result.update(get_ram_info())
 
     return result
 

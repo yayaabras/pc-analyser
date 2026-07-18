@@ -19,6 +19,12 @@ def collect_gpu() -> list[dict]:
     if not gpus:
         gpus.extend(_collect_linux_generic())
 
+    # WSL fallback — use PowerShell WMI
+    if not gpus:
+        from ..wsl_bridge import get_gpu_info, is_wsl
+        if is_wsl():
+            gpus.extend(get_gpu_info())
+
     return gpus
 
 
