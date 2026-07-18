@@ -10,6 +10,7 @@ def collect_thermal() -> dict:
         "temperatures": {},
         "fans": {},
         "cpu_temp_c": None,
+        "lhm_hint": None,
     }
 
     # psutil sensors (Linux, macOS, some Windows with drivers)
@@ -19,6 +20,23 @@ def collect_thermal() -> dict:
     # Windows: try LibreHardwareMonitor WMI bridge
     if platform.system() == "Windows":
         _collect_windows_lhm(result)
+
+    # WSL: try LHM via PowerShell bridge
+    if platform.system() == "Linux":
+        from ..wsl_bridge import is_wsl, get_temperatures_and_fans
+        if is_wsl():
+            lhm = get_temperatures_and_fans()
+            if lhm.get("lhm_available"):
+                result["temperatures"].update(lhm["temperatures"])
+                result["fans"].update(lhm["fans"])
+                if lhm.get("cpu_temp_c") is not None:
+                    result["cpu_temp_c"] = lhm["cpu_temp_c"]
+            else:
+                result["lhm_hint"] = (
+                    "Install & run LibreHardwareMonitor with WMI enabled "
+                    "to see temperatures and fan speeds. "
+                    "See: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor"
+                )
 
     # Best-effort CPU temp extraction
     result["cpu_temp_c"] = _extract_cpu_temp(result["temperatures"])

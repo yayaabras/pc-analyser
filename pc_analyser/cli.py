@@ -41,13 +41,19 @@ def live(interval):
     cfg = load_config()
     refresh = interval or cfg.get("refresh_interval_seconds", 2)
 
-    console.print(f"[dim]Starting live monitor (refresh every {refresh}s)...[/dim]")
+    console.print(f"[dim]Starting live monitor (refresh every {refresh}s). Ctrl+C to stop.[/dim]")
     try:
-        with Live(console=console, refresh_per_second=1, screen=True) as live_display:
+        with Live(
+            console=console,
+            refresh_per_second=2,
+            screen=False,
+            vertical_overflow="visible",
+            auto_refresh=False,
+        ) as live_display:
             while True:
                 data = collect_all()
                 alerts = evaluate_alerts(data)
-                live_display.update(render_live_frame(data, alerts))
+                live_display.update(render_live_frame(data, alerts), refresh=True)
                 time.sleep(refresh)
     except KeyboardInterrupt:
         console.print("\n[dim]Exiting live monitor.[/dim]")
@@ -76,6 +82,13 @@ def web(port, no_browser):
     from .web.server import create_app
     app, socketio = create_app()
     socketio.run(app, host="0.0.0.0", port=run_port, debug=False, use_reloader=False)
+
+
+@main.command(name="setup-lhm")
+def setup_lhm():
+    """Download and launch LibreHardwareMonitor for temp/fan data (WSL only)."""
+    from .lhm_setup import setup_lhm as _setup
+    _setup(console=console)
 
 
 @main.group()

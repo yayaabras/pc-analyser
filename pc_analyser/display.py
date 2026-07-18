@@ -130,6 +130,9 @@ def render_thermal(thermal):
             )
     if not thermal.get("temperatures"):
         t.add_row("-", "No sensor data available", "-", "-", "-")
+        hint = thermal.get("lhm_hint")
+        if hint:
+            t.add_row("[yellow]Tip[/yellow]", f"[dim]{hint}[/dim]", "", "", "")
 
     fans_t = Table(box=box.SIMPLE_HEAVY, expand=True)
     fans_t.add_column("Fan", style="cyan")
@@ -169,6 +172,8 @@ def render_gpu(gpus):
             t.add_row("  Temperature", f"{g.get('temperature_c', 'N/A')} C")
             fan = g.get("fan_speed_percent")
             t.add_row("  Fan Speed", f"{fan}%" if fan is not None else "N/A")
+            if g.get("resolution"):
+                t.add_row("  Resolution", g["resolution"])
     return Panel(t, title="[bold magenta]GPU[/bold magenta]", border_style="magenta")
 
 

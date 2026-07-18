@@ -17,7 +17,8 @@ MENU_ITEMS = [
     ("2", "Live Monitor",   "Auto-refreshing terminal dashboard (like htop)"),
     ("3", "Web Dashboard",  "Live charts in your browser"),
     ("4", "Config",         "View and edit alert thresholds"),
-    ("5", "Exit",           "Quit PC Analyser"),
+    ("5", "Setup LHM",      "Install LibreHardwareMonitor for temps & fan RPM"),
+    ("6", "Exit",           "Quit PC Analyser"),
 ]
 
 
@@ -108,7 +109,7 @@ def run_interactive():
         console.print(_render_menu())
         choice = Prompt.ask(
             "  Select",
-            choices=["1", "2", "3", "4", "5"],
+            choices=["1", "2", "3", "4", "5", "6"],
             default="1",
         )
 
@@ -133,11 +134,17 @@ def run_interactive():
             interval = cfg.get("refresh_interval_seconds", 2)
             console.print(f"[dim]Live monitor — refresh every {interval}s. Ctrl+C to stop.[/dim]")
             try:
-                with Live(console=console, refresh_per_second=1, screen=True) as live_display:
+                with Live(
+                    console=console,
+                    refresh_per_second=2,
+                    screen=False,
+                    vertical_overflow="visible",
+                    auto_refresh=False,
+                ) as live_display:
                     while True:
                         data = collect_all()
                         alerts = evaluate_alerts(data)
-                        live_display.update(render_live_frame(data, alerts))
+                        live_display.update(render_live_frame(data, alerts), refresh=True)
                         time.sleep(interval)
             except KeyboardInterrupt:
                 pass
@@ -163,5 +170,12 @@ def run_interactive():
             _config_menu()
 
         elif choice == "5":
+            from .lhm_setup import setup_lhm
+            console.clear()
+            setup_lhm(console=console)
+            console.print("\n[dim]Press Enter to return to menu...[/dim]")
+            input()
+
+        elif choice == "6":
             console.print("\n[dim]Goodbye.[/dim]\n")
             sys.exit(0)

@@ -19,7 +19,19 @@ def collect_motherboard() -> dict:
     if platform.system() == "Windows":
         result.update(_collect_windows())
     elif platform.system() == "Linux":
-        result.update(_collect_linux())
+        linux_data = _collect_linux()
+        result.update(linux_data)
+        # If still empty (WSL has no DMI), try PowerShell
+        if not any(result.values()):
+            from ..wsl_bridge import is_wsl, get_motherboard_info
+            if is_wsl():
+                result.update(get_motherboard_info())
+
+    # Enrich with full OS + system info on WSL/Windows
+    from ..wsl_bridge import is_wsl, get_os_info
+    if is_wsl() or platform.system() == "Windows":
+        os_data = get_os_info()
+        result.update(os_data)
 
     return result
 
