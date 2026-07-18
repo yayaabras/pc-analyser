@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pc-analyser"
+version = "0.1.0"
+description = "Cross-platform PC hardware monitoring tool with CLI and live web dashboard"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "yayaabras" }]
+keywords = ["hardware", "monitoring", "cpu", "ram", "gpu", "system", "cli", "dashboard"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "psutil==5.9.8",
+    "py-cpuinfo==9.0.0",
+    "GPUtil==1.4.0",
+    "click==8.1.7",
+    "rich==13.7.1",
+    "flask==3.0.3",
+    "flask-socketio==5.3.6",
+    "requests==2.32.3",
+]
+
+[project.optional-dependencies]
+windows = ["wmi==1.5.1; sys_platform == 'win32'"]
+dev = ["pytest==8.2.2", "pytest-mock==3.14.0"]
+
+[project.scripts]
+pc-analyser = "pc_analyser.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pc_analyser*"]
+
+[tool.setuptools.package-data]
+"pc_analyser.web" = ["templates/*.html", "static/*.css", "static/*.js"]

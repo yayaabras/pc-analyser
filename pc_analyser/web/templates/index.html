@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PC Analyser Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>&#x1F4BB; PC Analyser</h1>
+    <span id="status-dot" class="dot red"></span>
+    <span id="last-update">Connecting...</span>
+  </header>
+
+  <!-- Alerts -->
+  <div id="alerts-container"></div>
+
+  <main>
+    <!-- CPU -->
+    <section class="card" id="cpu-card">
+      <h2>CPU</h2>
+      <div class="info-grid" id="cpu-info"></div>
+      <div class="chart-wrap"><canvas id="cpu-chart"></canvas></div>
+    </section>
+
+    <!-- Memory -->
+    <section class="card" id="mem-card">
+      <h2>Memory (RAM)</h2>
+      <div class="info-grid" id="mem-info"></div>
+      <div class="chart-wrap"><canvas id="mem-chart"></canvas></div>
+    </section>
+
+    <!-- GPU -->
+    <section class="card" id="gpu-card">
+      <h2>GPU</h2>
+      <div id="gpu-info"></div>
+      <div class="chart-wrap"><canvas id="gpu-chart"></canvas></div>
+    </section>
+
+    <!-- Thermal -->
+    <section class="card" id="thermal-card">
+      <h2>Temperatures &amp; Fans</h2>
+      <div id="thermal-info"></div>
+    </section>
+
+    <!-- Storage -->
+    <section class="card" id="storage-card">
+      <h2>Storage</h2>
+      <div id="storage-info"></div>
+    </section>
+
+    <!-- Network -->
+    <section class="card" id="net-card">
+      <h2>Network</h2>
+      <div id="net-info"></div>
+      <div class="chart-wrap"><canvas id="net-chart"></canvas></div>
+    </section>
+
+    <!-- Battery -->
+    <section class="card" id="bat-card">
+      <h2>Battery</h2>
+      <div id="bat-info"><em>No battery detected.</em></div>
+    </section>
+
+    <!-- Motherboard -->
+    <section class="card" id="mobo-card">
+      <h2>Motherboard / BIOS</h2>
+      <div class="info-grid" id="mobo-info"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
