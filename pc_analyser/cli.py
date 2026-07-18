@@ -84,6 +84,13 @@ def web(port, no_browser):
     socketio.run(app, host="0.0.0.0", port=run_port, debug=False, use_reloader=False)
 
 
+@main.command(name="setup-lhm")
+def setup_lhm():
+    """Download and launch LibreHardwareMonitor for temp/fan data (WSL only)."""
+    from .lhm_setup import setup_lhm as _setup
+    _setup(console=console)
+
+
 @main.group()
 def config():
     """View and edit alert thresholds and settings."""

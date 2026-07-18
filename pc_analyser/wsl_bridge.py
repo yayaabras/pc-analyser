@@ -41,6 +41,20 @@ def powershell(command: str, timeout: int = 8):
         return None
 
 
+def powershell_raw(command: str, timeout: int = 15) -> str:
+    """Run PowerShell and return raw string output."""
+    if not is_wsl() or not os.path.exists(_POWERSHELL):
+        return ""
+    try:
+        result = subprocess.run(
+            [_POWERSHELL, "-NoProfile", "-NonInteractive", "-Command", command],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
+
+
 def get_gpu_info() -> list[dict]:
     """Get GPU info + live load % from Windows WMI."""
     data = powershell(

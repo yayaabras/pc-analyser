@@ -10,13 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `wsl_bridge.py` — PowerShell bridge that queries Windows WMI from inside WSL, enabling full hardware data when running on WSL
-
-### Fixed
-- GPU now detected in WSL via PowerShell WMI (`AMD Radeon RX 5600 XT` visible)
-- RAM speed (3600 MHz), type (DDR4), and stick count now populated in WSL
-- Motherboard and BIOS info now populated in WSL (`MSI B450 TOMAHAWK MAX`)
-- CPU L2/L3 cache now uses `lscpu` for accurate values (96 MB L3 instead of wrong 512 KB)
+- `lhm_setup.py` — auto-downloads, installs, and launches LibreHardwareMonitor from WSL via PowerShell
+- `pc-analyser setup-lhm` CLI command for one-step LHM setup
+- TUI menu option 5: Setup LHM (installs and launches with UAC prompt)
+- `powershell_raw()` added to `wsl_bridge.py` for non-JSON PowerShell calls
+- LHM setup auto-patches LHM config to enable WMI on first launch
 
 ---
 
