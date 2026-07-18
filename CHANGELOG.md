@@ -10,11 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `lhm_setup.py` — auto-downloads, installs, and launches LibreHardwareMonitor from WSL via PowerShell
-- `pc-analyser setup-lhm` CLI command for one-step LHM setup
-- TUI menu option 5: Setup LHM (installs and launches with UAC prompt)
-- `powershell_raw()` added to `wsl_bridge.py` for non-JSON PowerShell calls
-- LHM setup auto-patches LHM config to enable WMI on first launch
+- `build_windows.py` — builds a native Windows `.exe` using PyInstaller via PowerShell and creates a Desktop shortcut automatically
 
 ---
 
