@@ -9,7 +9,20 @@ import psutil
 def collect_storage() -> list[dict]:
     disks = []
 
-    # Take two IO counter snapshots for delta IOPS/throughput
+    # On WSL/Windows — use PowerShell for physical disk details
+    from ..wsl_bridge import is_wsl, get_disk_info, get_disk_smart_windows
+    if is_wsl():
+        win_disks = get_disk_info()
+        # Enrich with SMART data per disk
+        for d in win_disks:
+            smart = get_disk_smart_windows(d["index"])
+            d.update(smart)
+        if win_disks:
+            # Also get mount/usage from psutil and merge
+            _merge_psutil_usage(win_disks)
+            return win_disks
+
+    # Native Linux path
     io1 = _get_io_counters()
     time.sleep(0.5)
     io2 = _get_io_counters()
@@ -80,7 +93,33 @@ def collect_storage() -> list[dict]:
     return disks
 
 
-def _get_io_counters() -> dict:
+def _merge_psutil_usage(win_disks: list) -> None:
+    """Add mount point and usage % to Windows disk list from psutil."""
+    try:
+        vol_usage = {}
+        for part in psutil.disk_partitions(all=False):
+            try:
+                usage = psutil.disk_usage(part.mountpoint)
+                letter = part.mountpoint.replace("\\", "").replace("/", "").upper().rstrip(":")
+                vol_usage[letter] = {
+                    "mountpoint": part.mountpoint,
+                    "fstype": part.fstype,
+                    "total_gb": round(usage.total / 1024 ** 3, 2),
+                    "used_gb": round(usage.used / 1024 ** 3, 2),
+                    "free_gb": round(usage.free / 1024 ** 3, 2),
+                    "usage_percent": usage.percent,
+                }
+            except Exception:
+                pass
+        for d in win_disks:
+            vols = d.get("volumes", [])
+            for v in vols:
+                letter = str(v).upper().rstrip(":")
+                if letter in vol_usage:
+                    d.update(vol_usage[letter])
+                    break
+    except Exception:
+        pass
     try:
         return psutil.disk_io_counters(perdisk=True) or {}
     except Exception:

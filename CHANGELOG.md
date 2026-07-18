@@ -13,13 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CPU**: per-core frequency, load average (1/5/15 min), context switches total, interrupts total, iowait %
 - **GPU**: AMD sysfs collector reading `gpu_busy_percent`, VRAM, `pp_dpm_sclk/mclk` clocks, hwmon temps (junction + die), power draw (W), fan RPM — works on Linux with `amdgpu` driver
 - **GPU**: NVIDIA nvidia-smi now also queries core/memory clocks and power draw (W)
+- **GPU**: WSL now uses `get_gpu_extended()` — correct 6144MB VRAM for RX 5600 XT, PCI location, video processor, resolution
 - **Memory**: page faults total from `/proc/vmstat`, top-5 processes by RSS
 - **Disk**: live IOPS (read/write ops/sec) and throughput (MB/s) via 0.5s delta; full SMART attributes: power-on hours, reallocated sectors, wear level
+- **Disk (Windows/WSL)**: physical disk info via `Get-PhysicalDisk` — media type (SSD/HDD/NVMe), bus type, serial, firmware, health, volume letters
 - **Network**: errors in/out, drops in/out, packet counts, default gateway detection, ping latency to gateway
 - **Processes** (`collectors/processes.py`): top-N by CPU %, RAM (RSS), and disk I/O — new collector
 - **System** (`collectors/system.py`): uptime, boot time, OS version, WSL detection, thermal throttle events — new collector
+- **OS info (Windows/WSL)**: OS name, version, build number, registered owner, product ID, last update, secure boot status, SMBIOS version
 - **SQLite time-series** (`storage.py`): rolling 24h history at 2s intervals, `store_snapshot()`, `query_history()`, `prune_old()`, `get_stats_summary()`; web server stores every broadcast to DB
-- **Web API**: `/api/history` and `/api/history/<hours>` endpoints, `/api/stats` summary endpoint
+- **Web API**: `/api/history`, `/api/history/<hours>`, `/api/stats` endpoints
+- `wsl_bridge.py`: `get_os_info()`, `get_disk_info()`, `get_disk_smart_windows()`, `get_gpu_extended()`, `install_smartmontools_windows()`
+
+### Notes
+- SMART data (temp, wear %, power-on hours, data read/written) requires smartmontools on Windows
+- Install once with: `winget install --id=smartmontools.smartmontools` (run as Administrator)
 
 ---
 

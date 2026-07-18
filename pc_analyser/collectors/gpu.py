@@ -14,11 +14,11 @@ def collect_gpu() -> list[dict]:
         gpus.extend(_collect_amd_sysfs())
     if not gpus:
         gpus.extend(_collect_linux_generic())
-    # WSL fallback
+    # WSL fallback — use PowerShell extended GPU info
     if not gpus:
-        from ..wsl_bridge import get_gpu_info, is_wsl
+        from ..wsl_bridge import get_gpu_extended, is_wsl
         if is_wsl():
-            gpus.extend(get_gpu_info())
+            gpus.extend(get_gpu_extended())
     return gpus
 
 
